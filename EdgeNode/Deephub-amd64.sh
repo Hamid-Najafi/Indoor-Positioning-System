@@ -75,6 +75,8 @@ export NVM_DIR="$HOME/.nvm"
 nvm install --lts
 
 # ============================== 
+# DeepHub® Basic Setup
+# ============================== 
 # Clone Repos
 git clone https://github.com/flowcate/deephub-basic-setup
 git clone https://github.com/flowcate/deephub-examples
@@ -124,6 +126,7 @@ npm run start
 # To Stop
 npm run stop
 curl -X DELETE localhost:8081/deephub/v1/trackables
+curl -X DELETE hpthinclient.local:8081/deephub/v1/trackables
 # ============================== 
 http://37.32.6.18:8081
 
@@ -147,3 +150,18 @@ sudo rm -rf ~/deephub-basic-setup/
 git clone https://github.com/flowcate/deephub-basic-setup
 cd ~/deephub-basic-setup
 docker-compose up -d 
+
+# ============================== 
+# DeepHub® Advanced Setup
+# ============================== 
+git clone https://github.com/flowcate/deephub-advanced-setup.git
+sudo chown -R 1000:1000 ~/deephub-advanced-setup
+cd ~/deephub-advanced-setup
+docker-compose pull
+docker compose up -d
+
+# CREATE REALM & USER ...
+docker exec -it deephub-advanced-setup_keycloak_1 /bin/bash
+cd /opt/bitnami/keycloak/bin
+kcadm.sh update realms/master -s sslRequired=NONE --server http://localhost:8080/ --realm master --user user --password bitnami
+kcadm.sh update realms/omlox -s sslRequired=NONE --server http://localhost:8080/ --realm master --user user --password bitnami

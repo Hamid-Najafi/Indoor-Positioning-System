@@ -3,7 +3,7 @@
   "info": {
     "title": "DeepHub®",
     "description": "This is the DeepHub® API, compliant to the omlox™ hub API 1.2.1 and implementing a preview of the omlox™ hub API 2.0.0. You can find out more about omlox™ at <https://www.omlox.com>.",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "externalDocs": {
     "description": "Find out more about Swagger",
@@ -11,11 +11,11 @@
   },
   "servers": [
     {
-      "url": "127.0.0.1",
+      "url": "http://hpthinclient.local:8081/{basePath}",
       "description": "Local Reference Server",
       "variables": {
         "basePath": {
-          "default": "/deephub/v2"
+          "default": "deephub/v2"
         }
       }
     }
@@ -58,6 +58,11 @@
       "description": "Health checks and system information."
     }
   ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
   "paths": {
     "/zones/summary": {
       "get": {
@@ -80,16 +85,14 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         },
         "parameters": [
           {
-            "in": "query",
-            "name": "foreign_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Find a zone by its foreign_id."
+            "$ref": "#/components/parameters/foreign_id"
           }
         ]
       }
@@ -104,28 +107,15 @@
         "operationId": "getZoneIds",
         "responses": {
           "200": {
-            "description": "An array of all zone ids.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                }
-              }
-            }
+            "$ref": "#/components/responses/IdArray"
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         },
         "parameters": [
           {
-            "in": "query",
-            "name": "foreign_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Find a zone by its foreign_id."
+            "$ref": "#/components/parameters/foreign_id"
           }
         ]
       },
@@ -167,15 +157,8 @@
               }
             }
           },
-          "400": {
-            "description": "Zone not created. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       },
@@ -189,11 +172,19 @@
         "responses": {
           "204": {
             "description": "All zones deleted."
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
     },
     "/zones/{zone_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_zone_id"
+        }
+      ],
       "get": {
         "tags": [
           "Zones"
@@ -201,19 +192,6 @@
         "summary": "Get a zone.",
         "description": "Returns the zone object with the given id.",
         "operationId": "getZoneById",
-        "parameters": [
-          {
-            "name": "zone_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "A zone object.",
@@ -225,25 +203,8 @@
               }
             }
           },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Zone not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -254,19 +215,6 @@
         "summary": "Update a zone.",
         "description": "Updates the zone object with the given id.",
         "operationId": "UpdateZoneById",
-        "parameters": [
-          {
-            "name": "zone_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -281,25 +229,8 @@
           "204": {
             "description": "Zone updated."
           },
-          "400": {
-            "description": "Zone not updated. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Zone not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -310,47 +241,22 @@
         "summary": "Delete a zone.",
         "description": "Deletes the zone object with the given id.",
         "operationId": "deleteZoneById",
-        "parameters": [
-          {
-            "name": "zone_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "204": {
             "description": "Zone deleted."
           },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Zone not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/zones/{zone_id}/transform": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_zone_id"
+        }
+      ],
       "put": {
         "tags": [
           "Zones"
@@ -360,23 +266,7 @@
         "operationId": "TransformByZoneId",
         "parameters": [
           {
-            "name": "zone_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the position as a GeoJSON object."
+            "$ref": "#/components/parameters/geojson"
           }
         ],
         "requestBody": {
@@ -400,30 +290,18 @@
               }
             }
           },
-          "400": {
-            "description": "Transformation failed. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Zone not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/zones/{zone_id}/createfence": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_zone_id"
+        }
+      ],
       "get": {
         "tags": [
           "Zones"
@@ -431,19 +309,6 @@
         "summary": "Create a fence object from a zone.",
         "description": "Creates a geofence object using the ground control points of the zone with the given id.",
         "operationId": "createFenceFromZone",
-        "parameters": [
-          {
-            "name": "zone_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "A fence object.",
@@ -455,30 +320,18 @@
               }
             }
           },
-          "400": {
-            "description": "Failed to create a fence from zone. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Zone not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/zones/{zone_id}/fence": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_zone_id"
+        }
+      ],
       "post": {
         "tags": [
           "Zones"
@@ -486,19 +339,6 @@
         "summary": "Create a fence object with geographic coordinates via the zone's transformation configuration.",
         "description": "Consumes a fence with local coordinates related to the zone and creates a new fence object with geographic coordinates via the zone's transformation configuration.",
         "operationId": "createFenceTransformedByZoneId",
-        "parameters": [
-          {
-            "name": "zone_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -520,25 +360,8 @@
               }
             }
           },
-          "400": {
-            "description": "Failed to create a fence transformed to the zone's coordinate system. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Zone not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
@@ -564,68 +387,9 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/trackables/rules/locating": {
-      "get": {
-        "tags": [
-          "Trackables"
-        ],
-        "summary": "Gets an array of rules for locating trackables.",
-        "description": "Returns an array of rules for locating trackables. The rule set applies to all trackables that don't have trackable specific rules.",
-        "operationId": "getDefaultRuleSet",
-        "responses": {
-          "200": {
-            "description": "An array of locating rules.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleSet"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Trackables"
-        ],
-        "summary": "Updates the locating rule set.",
-        "description": "Updates the locating rule set. The rule set applies to all trackables that don't have trackable specific rules.",
-        "operationId": "updateDefaultRuleSet",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RuleSet"
-              }
-            }
           },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "The updated array of locating rules.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleSet"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -640,18 +404,10 @@
         "operationId": "getAllTrackableIds",
         "responses": {
           "200": {
-            "description": "An array of all trackable ids.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                }
-              }
-            }
+            "$ref": "#/components/responses/IdArray"
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       },
@@ -703,15 +459,8 @@
               }
             }
           },
-          "400": {
-            "description": "Trackable not created. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       },
@@ -725,11 +474,77 @@
         "responses": {
           "204": {
             "description": "All trackables deleted."
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
+          }
+        }
+      }
+    },
+    "/trackables/rules/locating": {
+      "get": {
+        "tags": [
+          "Trackables"
+        ],
+        "summary": "Gets an array of rules for locating trackables.",
+        "description": "Returns an array of rules for locating trackables. The rule set applies to all trackables that don't have trackable specific rules.",
+        "operationId": "getDefaultRuleSet",
+        "responses": {
+          "200": {
+            "description": "An array of locating rules.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleSet"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Trackables"
+        ],
+        "summary": "Updates the locating rule set.",
+        "description": "Updates the locating rule set. The rule set applies to all trackables that don't have trackable specific rules.",
+        "operationId": "updateDefaultRuleSet",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleSet"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The updated array of locating rules.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleSet"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       }
     },
     "/trackables/{trackable_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_trackable_id"
+        }
+      ],
       "get": {
         "tags": [
           "Trackables"
@@ -737,19 +552,6 @@
         "summary": "Get a trackable.",
         "description": "Returns the trackable object with the given id.",
         "operationId": "getTrackableById",
-        "parameters": [
-          {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Trackable object.",
@@ -761,25 +563,8 @@
               }
             }
           },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trackable not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -790,42 +575,12 @@
         "summary": "Delete a trackable.",
         "description": "Deletes the trackable object with the given id.",
         "operationId": "deleteTrackableById",
-        "parameters": [
-          {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "204": {
             "description": "Trackable deleted."
           },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trackable not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -837,17 +592,6 @@
         "description": "Updates the trackable object with the given id.",
         "operationId": "updateTrackableById",
         "parameters": [
-          {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "in": "query",
             "name": "force_location_update",
@@ -871,354 +615,28 @@
           "200": {
             "description": "Trackable updated."
           },
-          "400": {
-            "description": "Trackable update failed. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trackable not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/trackables/motions": {
-      "get": {
-        "tags": [
-          "Trackables"
-        ],
-        "summary": "Get an array of all trackable motion objects. If authorization is enabled only the corresponding trackable motions are returned.",
-        "description": "Returns an array of all trackable motion objects.",
-        "operationId": "getAllTrackableMotions",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the geometry according to the specified EPSG coordinate reference system identifier.",
-            "example": "EPSG:4326"
-          },
-          {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
-          },
-          {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the trackable motions as a GeoJSON feature collection."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "An array of all trackable motion objects.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TrackableMotion"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/trackables/{trackable_id}/motion": {
-      "get": {
-        "tags": [
-          "Trackables"
-        ],
-        "summary": "Get a motion.",
-        "description": "Returns the motion object for the trackable with the given id.",
-        "operationId": "getTrackableMotion",
-        "parameters": [
-          {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the geometry according to the specified EPSG coordinate reference system identifier.",
-            "example": "EPSG:4326"
-          },
-          {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
-          },
-          {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the trackable motion as a GeoJSON object."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A trackable motion object.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrackableMotion"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trackable motion not found, or motion for this trackable has not yet been generated.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/trackables/{trackable_id}/location": {
-      "get": {
-        "tags": [
-          "Trackables"
-        ],
-        "summary": "Get a location.",
-        "description": "Returns the most significant location of the trackable with the given id, with consideration of all recent location updates from the trackable's location providers.",
-        "operationId": "getMostSignificantTrackableLocation",
-        "parameters": [
-          {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the position according to the specified EPSG coordinate reference system identifier.",
-            "example": "EPSG:4326"
-          },
-          {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
-          },
-          {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the location as a GeoJSON object."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A location object.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Failed to create a location transformed to the given coordinate system. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trackable not found, or location providers have not been configured for this trackable.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/trackables/{trackable_id}/locations": {
-      "get": {
-        "tags": [
-          "Trackables"
-        ],
-        "summary": "Get all locations.",
-        "description": "Returns the last known location of the trackable with the given id for all of its location providers.",
-        "operationId": "getAllTrackableLocations",
-        "parameters": [
-          {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the positions according to the specified EPSG coordinate reference system identifier.",
-            "example": "EPSG:4326"
-          },
-          {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
-          },
-          {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the locations as a GeoJSON feature collection."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "All location objects.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Location"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trackable not found, or location providers have not been configured for this trackable.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/trackables/{trackable_id}/fences": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_trackable_id"
+        }
+      ],
       "get": {
         "tags": [
           "Trackables"
         ],
         "summary": "Get all fences the trackable is within.",
-        "description": "Returns all fence objects the trackable with the given id is currently within.",
+        "description": "Returns all fences for which the trackable is currently considered as being inside the respective fence, e.g., for which a region entry fence event was triggered.",
         "operationId": "getInsideFenceForTrackable",
         "parameters": [
           {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "spatial_query",
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "If true, the query will be performed based strictly on spatial information, i.e. the last reported location of each provider. Otherwise, the query will take into account timeouts."
+            "$ref": "#/components/parameters/spatial_query"
           }
         ],
         "responses": {
@@ -1235,30 +653,167 @@
               }
             }
           },
-          "400": {
-            "description": "Check error message for details.",
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      }
+    },
+    "/trackables/{trackable_id}/location": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_trackable_id"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Trackables"
+        ],
+        "summary": "Get a location.",
+        "description": "Returns the most significant location of the trackable with the given id, with consideration of all recent location updates from the trackable's location providers.",
+        "operationId": "getMostSignificantTrackableLocation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/crs"
+          },
+          {
+            "$ref": "#/components/parameters/zone_id"
+          },
+          {
+            "$ref": "#/components/parameters/geojson"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A location object.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/Location"
                 }
               }
             }
           },
-          "404": {
-            "description": "Trackable not found.",
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      }
+    },
+    "/trackables/{trackable_id}/locations": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_trackable_id"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Trackables"
+        ],
+        "summary": "Get all locations.",
+        "description": "Returns the last known location of the trackable with the given id for all of its location providers.",
+        "operationId": "getAllTrackableLocations",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/crs"
+          },
+          {
+            "$ref": "#/components/parameters/zone_id"
+          },
+          {
+            "$ref": "#/components/parameters/geojson"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All location objects.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Location"
+                  }
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      }
+    },
+    "/trackables/{trackable_id}/motion": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_trackable_id"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Trackables"
+        ],
+        "summary": "Get a motion.",
+        "description": "Returns the motion object for the trackable with the given id.",
+        "operationId": "getTrackableMotion",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/crs"
+          },
+          {
+            "$ref": "#/components/parameters/zone_id"
+          },
+          {
+            "$ref": "#/components/parameters/geojson"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A trackable motion object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackableMotion"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      }
+    },
+    "/trackables/{trackable_id}/providers": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_trackable_id"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Trackables"
+        ],
+        "summary": "Get all providers linked to this trackable.",
+        "description": "Returns the ids of all location providers linked to the trackable with the given id.",
+        "operationId": "getAllTrackableProviders",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/IdArray"
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/trackables/{trackable_id}/sensors": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_trackable_id"
+        }
+      ],
       "get": {
         "tags": [
           "Trackables"
@@ -1266,19 +821,6 @@
         "summary": "Get an array of sensor objects.",
         "description": "Returns data from the sensors of all location providers associated with the trackable with the given id.",
         "operationId": "getAllTrackableSensors",
-        "parameters": [
-          {
-            "name": "trackable_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "All sensor data.",
@@ -1290,25 +832,47 @@
               }
             }
           },
-          "400": {
-            "description": "Check error message for details.",
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      }
+    },
+    "/trackables/motions": {
+      "get": {
+        "tags": [
+          "Trackables"
+        ],
+        "summary": "Get an array of all trackable motion objects. If authorization is enabled only the corresponding trackable motions are returned.",
+        "description": "Returns an array of all trackable motion objects.",
+        "operationId": "getAllTrackableMotions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/crs"
+          },
+          {
+            "$ref": "#/components/parameters/zone_id"
+          },
+          {
+            "$ref": "#/components/parameters/geojson"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An array of all trackable motion objects.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrackableMotion"
+                  }
                 }
               }
             }
           },
-          "404": {
-            "description": "Trackable not found, or location providers have not been configured for this trackable.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       }
@@ -1334,6 +898,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -1348,18 +915,10 @@
         "operationId": "getLocationProviderIds",
         "responses": {
           "200": {
-            "description": "An array of all location provider ids.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                }
-              }
-            }
+            "$ref": "#/components/responses/IdArray"
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       },
@@ -1401,15 +960,8 @@
               }
             }
           },
-          "400": {
-            "description": "Location provider not created. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       },
@@ -1423,11 +975,19 @@
         "responses": {
           "204": {
             "description": "All providers deleted."
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
     },
     "/providers/{provider_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_provider_id"
+        }
+      ],
       "get": {
         "tags": [
           "Providers"
@@ -1435,18 +995,6 @@
         "summary": "Get a location provider.",
         "description": "Returns the location provider object with the given id.",
         "operationId": "getProviderById",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "A location provider object.",
@@ -1458,15 +1006,8 @@
               }
             }
           },
-          "404": {
-            "description": "Location provider not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
           }
         }
       },
@@ -1477,18 +1018,6 @@
         "summary": "Update a location provider.",
         "description": "Updates the location provider object with the given id.",
         "operationId": "updateProviderById",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1503,25 +1032,8 @@
           "204": {
             "description": "Location provider updated."
           },
-          "400": {
-            "description": "Location provider not updated. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Location provider not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -1532,212 +1044,32 @@
         "summary": "Delete location provider.",
         "description": "Deletes the location provider object with the given id.",
         "operationId": "deleteProviderById",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "204": {
             "description": "Location provider deleted."
           },
-          "404": {
-            "description": "Location provider not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/providers/{provider_id}/location": {
-      "put": {
-        "tags": [
-          "Providers"
-        ],
-        "summary": "Update location.",
-        "description": "This method updates the current location of the location provider with the given id.",
-        "operationId": "updateLocationByProviderId",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Location"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Location accepted."
-          },
-          "400": {
-            "description": "Location not updated. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Providers"
-        ],
-        "summary": "Get location.",
-        "description": "Returns the last known location for a location provider.",
-        "operationId": "getLocationByProviderId",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the position according to the specified EPSG coordinate reference system identifier.",
-            "example": "EPSG:4326"
-          },
-          {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the location as a GeoJSON object."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A location object.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Failed to create a location transformed to the given coordinate system. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Location provider not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Providers"
-        ],
-        "summary": "Delete location of location provider.",
-        "description": "Deletes the location object of the provider with the given id.",
-        "operationId": "deleteProviderLocationById",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "The location object was deleted."
-          },
-          "404": {
-            "description": "Location provider not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
           }
         }
       }
     },
     "/providers/{provider_id}/fences": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_provider_id"
+        }
+      ],
       "get": {
         "tags": [
           "Providers"
         ],
         "summary": "Get all fences the location provider is within.",
-        "description": "Returns all fence objects the location provider with the given id is currently within.",
+        "description": "Returns all fences for which the location provider is currently considered as being inside the respective fence, e.g., for which a region entry fence event was triggered.",
         "operationId": "getInsideFenceForProvider",
         "parameters": [
           {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "spatial_query",
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "If true, the query will be performed based strictly on spatial information, i.e. the last reported location of each provider. Otherwise, the query will take into account timeouts."
+            "$ref": "#/components/parameters/spatial_query"
           }
         ],
         "responses": {
@@ -1754,20 +1086,134 @@
               }
             }
           },
-          "404": {
-            "description": "Location provider not found.",
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
+          }
+        }
+      }
+    },
+    "/providers/{provider_id}/location": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_provider_id"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Providers"
+        ],
+        "summary": "Update location.",
+        "description": "This method updates the current location of the location provider with the given id.",
+        "operationId": "updateLocationByProviderId",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Location"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Location accepted."
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Providers"
+        ],
+        "summary": "Get location.",
+        "description": "Returns the last known location for a location provider.",
+        "operationId": "getLocationByProviderId",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/crs"
+          },
+          {
+            "$ref": "#/components/parameters/zone_id"
+          },
+          {
+            "$ref": "#/components/parameters/geojson"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A location object.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/Location"
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Providers"
+        ],
+        "summary": "Delete location of location provider.",
+        "description": "Deletes the location object of the provider with the given id.",
+        "operationId": "deleteProviderLocationById",
+        "responses": {
+          "204": {
+            "description": "The location object was deleted."
+          },
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
+          }
+        }
+      }
+    },
+    "/providers/{provider_id}/proximity": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_provider_id"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Providers"
+        ],
+        "summary": "Update location of location provider via a proximity event.",
+        "description": "This method updates the current location of one location provider by an emitted proximity event. A location object is generated internally by using the position and floor information related to the omlox™ zone that generated the proximity event.",
+        "operationId": "updateProximityByProviderId",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Proximity"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Proximity accepted."
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/providers/{provider_id}/sensors": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_provider_id"
+        }
+      ],
       "put": {
         "tags": [
           "Providers"
@@ -1775,18 +1221,6 @@
         "summary": "Update sensor data.",
         "description": "This method updates the sensor data of the location provider with the given id.",
         "operationId": "updateSensorsByProviderId",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1801,15 +1235,8 @@
           "204": {
             "description": "Sensor data accepted."
           },
-          "404": {
-            "description": "Location provider not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -1820,18 +1247,6 @@
         "summary": "Get sensor data.",
         "description": "Returns the sensor data for the location provider with the given id.",
         "operationId": "getSensorsByProviderId",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Sensor data.",
@@ -1843,15 +1258,31 @@
               }
             }
           },
-          "404": {
-            "description": "Location Provider not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
+          }
+        }
+      }
+    },
+    "/providers/{provider_id}/trackables": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_provider_id"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Providers"
+        ],
+        "summary": "Get all trackables which are linked to this provider.",
+        "description": "Returns the ids of all trackables which are linked to the location provider with the given id.",
+        "operationId": "getAllProviderTrackables",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/IdArray"
+          },
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
           }
         }
       }
@@ -1866,30 +1297,13 @@
         "operationId": "getAllLocations",
         "parameters": [
           {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the locations according to the specified crs (coordinate reference system) identifier. The crs MUST be either a valid EPSG identifier or ''local''. If the crs is ''local'' without a zone_id query parameter, the projection is done based on the location update's zone id ('source' property). If a zone_id query parameter is provided, the projection is done based on that zone projection.",
-            "example": "EPSG:4326"
+            "$ref": "#/components/parameters/crs"
           },
           {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
+            "$ref": "#/components/parameters/zone_id"
           },
           {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the locations as a GeoJSON feature collection."
+            "$ref": "#/components/parameters/geojson"
           }
         ],
         "responses": {
@@ -1906,15 +1320,8 @@
               }
             }
           },
-          "400": {
-            "description": "Failed to get the locations. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       },
@@ -1942,15 +1349,8 @@
           "204": {
             "description": "Locations accepted."
           },
-          "400": {
-            "description": "Locations not updated. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       },
@@ -1964,54 +1364,9 @@
         "responses": {
           "204": {
             "description": "All locations deleted."
-          }
-        }
-      }
-    },
-    "/providers/{provider_id}/proximity": {
-      "put": {
-        "tags": [
-          "Providers"
-        ],
-        "summary": "Update location of location provider via a proximity event.",
-        "description": "This method updates the current location of one location provider by an emitted proximity event. A location object is generated internally by using the position and floor information related to the omlox™ zone that generated the proximity event.",
-        "operationId": "updateProximityByProviderId",
-        "parameters": [
-          {
-            "name": "provider_id",
-            "description": "The id of the provider for which to send a proximity event.",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Proximity"
-              }
-            }
           },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Proximity accepted."
-          },
-          "400": {
-            "description": "Failed to update the proximity. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -2041,15 +1396,8 @@
           "204": {
             "description": "Proximities accepted."
           },
-          "400": {
-            "description": "Failed to update the proximities. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       }
@@ -2064,30 +1412,13 @@
         "operationId": "getAllFences",
         "parameters": [
           {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the fence regions according to the specified crs (coordinate reference system) identifier. The crs MUST be either a valid EPSG identifier or ''local''. If the crs is ''local'' a zone_id query parameter MUST be provided to project the coordinates relative to the zone's coordinate system.",
-            "example": "EPSG:4326"
+            "$ref": "#/components/parameters/crs"
           },
           {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
+            "$ref": "#/components/parameters/zone_id"
           },
           {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the locations as a GeoJSON feature collection."
+            "$ref": "#/components/parameters/geojson"
           }
         ],
         "responses": {
@@ -2104,15 +1435,8 @@
               }
             }
           },
-          "400": {
-            "description": "Failed to get fences. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       }
@@ -2127,17 +1451,10 @@
         "operationId": "getAllFenceIds",
         "responses": {
           "200": {
-            "description": "An array of all fence ids.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Fence"
-                  }
-                }
-              }
-            }
+            "$ref": "#/components/responses/IdArray"
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       },
@@ -2179,15 +1496,8 @@
               }
             }
           },
-          "400": {
-            "description": "Fence not created. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       },
@@ -2202,20 +1512,18 @@
           "204": {
             "description": "All fences deleted."
           },
-          "404": {
-            "description": "Failed to access fences. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
     },
     "/fences/{fence_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_fence_id"
+        }
+      ],
       "get": {
         "tags": [
           "Fences"
@@ -2225,41 +1533,13 @@
         "operationId": "getFenceById",
         "parameters": [
           {
-            "name": "fence_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+            "$ref": "#/components/parameters/crs"
           },
           {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the fence regions according to the specified crs (coordinate reference system) identifier. The crs MUST be either a valid EPSG identifier or ''local''. If the crs is ''local'', a zone_id query parameter MUST also be provided to project the coordinates relative to the zone's coordinate system.",
-            "example": "EPSG:4326"
+            "$ref": "#/components/parameters/zone_id"
           },
           {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
-          },
-          {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the locations as a GeoJSON feature collection."
+            "$ref": "#/components/parameters/geojson"
           }
         ],
         "responses": {
@@ -2273,25 +1553,8 @@
               }
             }
           },
-          "400": {
-            "description": "Failed to get fence. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Fence not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -2302,19 +1565,6 @@
         "summary": "Update a fence.",
         "description": "Updates the fence object with the given id.",
         "operationId": "updateFenceById",
-        "parameters": [
-          {
-            "name": "fence_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2329,25 +1579,8 @@
           "204": {
             "description": "Fence object updated."
           },
-          "400": {
-            "description": "Fence not updated. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Fence not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       },
@@ -2358,179 +1591,22 @@
         "summary": "Delete a fence.",
         "description": "Deletes the fence object with the given id.",
         "operationId": "deleteFenceById",
-        "parameters": [
-          {
-            "name": "fence_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "204": {
             "description": "Fence object deleted."
           },
-          "400": {
-            "description": "Fence not deleted. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Fence not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/fences/{fence_id}/providers": {
-      "get": {
-        "tags": [
-          "Fences"
-        ],
-        "summary": "Get all location providers within a fence.",
-        "description": "Returns location providers which have a location that is currently considered as being inside the given fence, e.g., for which a region entry fence event was triggered.",
-        "operationId": "getProvidersInsideFence",
-        "parameters": [
-          {
-            "name": "fence_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "spatial_query",
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "If true, the query will be performed based strictly on spatial information, i.e. the last reported location of each provider. Otherwise, the query will take into account timeouts."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "An array of all location provider ids.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LocationProvider"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Fence not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/fences/{fence_id}/trackables": {
-      "get": {
-        "tags": [
-          "Fences"
-        ],
-        "summary": "Get all trackables within a fence.",
-        "description": "Returns trackables which have a location that is currently considered as being inside the given fence, e.g., for which a region entry fence event was triggered.",
-        "operationId": "getTrackablesInside",
-        "parameters": [
-          {
-            "name": "fence_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "spatial_query",
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "If true, the query will be performed based strictly on spatial information, i.e. the last reported location of each trackable. Otherwise, the query will take into account timeouts."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "An array of all trackable ids.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Trackable"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Fence or expected trackables not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/fences/{fence_id}/locations": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_fence_id"
+        }
+      ],
       "get": {
         "tags": [
           "Fences"
@@ -2540,50 +1616,16 @@
         "operationId": "getLocationsInsideFence",
         "parameters": [
           {
-            "name": "fence_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+            "$ref": "#/components/parameters/crs"
           },
           {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the position according to the specified EPSG coordinate reference system identifier.",
-            "example": "EPSG:4326"
+            "$ref": "#/components/parameters/zone_id"
           },
           {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
+            "$ref": "#/components/parameters/geojson"
           },
           {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the location as a GeoJSON object.",
-            "example": "EPSG:4326"
-          },
-          {
-            "in": "query",
-            "name": "spatial_query",
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "If true, the query will be performed based strictly on spatial information, i.e. the last reported location. Otherwise, the query will take into account timeouts."
+            "$ref": "#/components/parameters/spatial_query"
           }
         ],
         "responses": {
@@ -2600,30 +1642,18 @@
               }
             }
           },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Fence not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
     },
     "/fences/{fence_id}/motions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_fence_id"
+        }
+      ],
       "get": {
         "tags": [
           "Fences"
@@ -2633,50 +1663,16 @@
         "operationId": "getTrackableMotionsInsideFence",
         "parameters": [
           {
-            "name": "fence_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+            "$ref": "#/components/parameters/crs"
           },
           {
-            "in": "query",
-            "name": "crs",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Project the position according to the specified EPSG coordinate reference system identifier.",
-            "example": "EPSG:4326"
+            "$ref": "#/components/parameters/zone_id"
           },
           {
-            "in": "query",
-            "name": "zone_id",
-            "schema": {
-              "type": "string"
-            },
-            "description": "The zone id to be used to project coordinates.",
-            "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
+            "$ref": "#/components/parameters/geojson"
           },
           {
-            "in": "query",
-            "name": "geojson",
-            "schema": {
-              "type": "string"
-            },
-            "description": "Return the location as a GeoJSON object.",
-            "example": "EPSG:4326"
-          },
-          {
-            "in": "query",
-            "name": "spatial_query",
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "If true, the query will be performed based strictly on spatial information, i.e. the last reported location. Otherwise, the query will take into account timeouts."
+            "$ref": "#/components/parameters/spatial_query"
           }
         ],
         "responses": {
@@ -2693,25 +1689,64 @@
               }
             }
           },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      }
+    },
+    "/fences/{fence_id}/providers": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_fence_id"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Fences"
+        ],
+        "summary": "Get all location providers within a fence.",
+        "description": "Returns location providers which have a location that is currently considered as being inside the given fence, e.g., for which a region entry fence event was triggered.",
+        "operationId": "getProvidersInsideFence",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/spatial_query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/IdArray"
           },
-          "404": {
-            "description": "Fence not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
+          }
+        }
+      }
+    },
+    "/fences/{fence_id}/trackables": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_fence_id"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Fences"
+        ],
+        "summary": "Get all trackables within a fence.",
+        "description": "Returns trackables which have a location that is currently considered as being inside the given fence, e.g., for which a region entry fence event was triggered.",
+        "operationId": "getTrackablesInside",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/spatial_query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/IdArray"
+          },
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
@@ -2722,7 +1757,7 @@
           "Statistics"
         ],
         "summary": "Consumption summary.",
-        "description": "Get all consumption reports, each comprising the current fence and zone configuration and a detailed usage statistic.",
+        "description": "Get all consumption reports, each containing the current fence and zone configuration and a detailed usage statistic.",
         "operationId": "getConsumptionStatistic",
         "responses": {
           "200": {
@@ -2737,6 +1772,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -2759,6 +1797,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -2807,15 +1848,8 @@
               }
             }
           },
-          "400": {
-            "description": "Erroneous parameters. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
           }
         }
       }
@@ -2848,7 +1882,7 @@
           "License"
         ],
         "summary": "Start the trial period.",
-        "description": "Start the trial period and get a lease with information  comprising the hub instance id and lease, trial and grace period end timestamps and an optional warning if the license server was not reachable.",
+        "description": "Start the trial period and get a lease with information including the hub instance id and lease, trial and grace period end timestamps and an optional warning if the license server was not reachable.",
         "operationId": "startTrial",
         "responses": {
           "201": {
@@ -2861,15 +1895,8 @@
               }
             }
           },
-          "400": {
-            "description": "The trial period expired, the license is not valid or the license server was not reachable. Refer to the error message for a description of the actual problem that occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestForLicenseErrors"
           }
         }
       }
@@ -2893,15 +1920,8 @@
               }
             }
           },
-          "400": {
-            "description": "The json or the license key is not valid or the license server was not reachable. Refer to the error message for a description of the actual problem that occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestForLicenseErrors"
           }
         }
       }
@@ -2912,7 +1932,7 @@
           "License"
         ],
         "summary": "Get the lease information.",
-        "description": "Get information about the lease comprising the hub instance id and lease and grace period end timestamps, an optional warning if the license server was not reachable and optional trial information if it's a trial version.",
+        "description": "Get information about the lease, including the hub instance id, lease, grace period end timestamps, and an optional warning if the license server was not reachable and optional trial information if it's a trial version.",
         "operationId": "getLease",
         "responses": {
           "200": {
@@ -2925,25 +1945,8 @@
               }
             }
           },
-          "400": {
-            "description": "The trial period expired, the license is not valid or the license server was not reachable. Refer to the error message for a description of the actual problem that occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Lease not available or trial period not started.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/LicenseErrors"
           }
         }
       },
@@ -2958,15 +1961,8 @@
           "204": {
             "description": "Lease deleted."
           },
-          "400": {
-            "description": "Lease not deleted.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestForLicenseErrors"
           }
         }
       }
@@ -2993,15 +1989,8 @@
           "204": {
             "description": "Location data processed successfully."
           },
-          "400": {
-            "description": "Location was not processed. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       },
@@ -3026,15 +2015,8 @@
           "204": {
             "description": "Location data processed successfully."
           },
-          "400": {
-            "description": "Location was not processed. Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       }
@@ -3062,15 +2044,8 @@
           "204": {
             "description": "The expression is valid."
           },
-          "400": {
-            "description": "The expression contains errors, which are further explained in the returned error object.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestErrors"
           }
         }
       }
@@ -3093,6 +2068,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -3118,6 +2096,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -3153,15 +2134,8 @@
               }
             }
           },
-          "404": {
-            "description": "Source not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/NotFoundErrors"
           }
         }
       }
@@ -3184,6 +2158,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -3206,6 +2183,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -3231,11 +2211,19 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
     },
     "/health/zones/{zone_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/path_zone_id"
+        }
+      ],
       "get": {
         "tags": [
           "Health"
@@ -3243,18 +2231,6 @@
         "summary": "Get health information about the zone with the given id.",
         "description": "This endpoint can be used to get information about the state of the zone with the given id.",
         "operationId": "getHealthForZone",
-        "parameters": [
-          {
-            "name": "zone_id",
-            "in": "path",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Response with information about the zone with the given id.",
@@ -3266,25 +2242,8 @@
               }
             }
           },
-          "400": {
-            "description": "Check error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Zone not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "default": {
+            "$ref": "#/components/responses/BadRequestNotFoundErrors"
           }
         }
       }
@@ -3320,6 +2279,9 @@
                 }
               }
             }
+          },
+          "default": {
+            "$ref": "#/components/responses/AuthErrors"
           }
         }
       }
@@ -3499,6 +2461,35 @@
                 "type": "number",
                 "description": "The current number of location providers."
               },
+              "locationproviders_by_type_no": {
+                "type": "object",
+                "properties": {
+                  "uwb": {
+                    "type": "number",
+                    "description": "The current number of location providers with type 'uwb'."
+                  },
+                  "gps": {
+                    "type": "number",
+                    "description": "The current number of location providers with type 'gps'."
+                  },
+                  "wifi": {
+                    "type": "number",
+                    "description": "The current number of location providers with type 'wifi'."
+                  },
+                  "ibeacon": {
+                    "type": "number",
+                    "description": "The current number of location providers with type 'ibeacon'."
+                  },
+                  "virtual": {
+                    "type": "number",
+                    "description": "The current number of location providers with type 'virtual'."
+                  },
+                  "unknown": {
+                    "type": "number",
+                    "description": "The current number of location providers with type 'unknown'."
+                  }
+                }
+              },
               "trackables_no_active": {
                 "type": "number",
                 "description": "The number of trackables which have been active this month."
@@ -3506,6 +2497,35 @@
               "locationproviders_no_active": {
                 "type": "number",
                 "description": "The number of location providers which have been active this month."
+              },
+              "locationproviders_by_type_no_active": {
+                "type": "object",
+                "properties": {
+                  "uwb": {
+                    "type": "number",
+                    "description": "The number of location providers with type 'uwb' which have been active this month."
+                  },
+                  "gps": {
+                    "type": "number",
+                    "description": "The number of location providers with type 'gps' which have been active this month."
+                  },
+                  "wifi": {
+                    "type": "number",
+                    "description": "The number of location providers with type 'wifi' which have been active this month."
+                  },
+                  "ibeacon": {
+                    "type": "number",
+                    "description": "The number of location providers with type 'ibeacon' which have been active this month."
+                  },
+                  "virtual": {
+                    "type": "number",
+                    "description": "The number of location providers with type 'virtual' which have been active this month."
+                  },
+                  "unknown": {
+                    "type": "number",
+                    "description": "The number of location providers with type 'unknown' which have been active this month."
+                  }
+                }
               }
             }
           },
@@ -3523,16 +2543,18 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "A text representation of the error type. One of \"bad request\", \"unauthorized\", \"conflict\", \"not found\" or \"server error\"."
+            "description": "A text representation of the error type.",
+            "example": "bad request"
           },
           "code": {
             "type": "number",
             "description": "HTTP status code",
-            "example": 404
+            "example": 400
           },
           "message": {
             "type": "string",
-            "description": "A human readable error message which may give a hint to what went wrong."
+            "description": "A human readable error message which may give a hint to what went wrong.",
+            "example": "The request could not be processed due to an error."
           }
         }
       },
@@ -3545,7 +2567,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Must be a unique identifier (i.e. a UUID). When creating a fence, a unique id will be generated if it is not provided."
           },
           "region": {
             "oneOf": [
@@ -3591,7 +2614,7 @@
           },
           "tolerance_timeout": {
             "type": "number",
-            "description": "The timeout in milliseconds after which a location outside of a fence, but still within exit_tolerance distance to that fence, should trigger a fence exit event. For example, assume an exit_tolerance of 1m: A location previously within the fence is now located 50cm outside of the fence and remains within the given exit_tolerance distance to that fence. An exit event is triggered after tolerance_timeout when the location remains outside of the fence. If not set, or null, the timeout will be equal to the fence timeout. If tolerance_timeout is greater than the fence timeout the tolerance_timeout will be reduced to the Fence timeout. The provided number must be positive or -1 in case of an infinite tolerance_timeout.",
+            "description": "The timeout in milliseconds after which a location outside of a fence, but still within exit_tolerance distance to that fence, should trigger a fence exit event. For example, assume an exit_tolerance of 1m: A location previously within the fence is now located 50cm outside of the fence and remains within the given exit_tolerance distance to that fence. An exit event is triggered after tolerance_timeout when the location remains outside of the fence. If not set, or null, the timeout will be equal to the fence timeout. If tolerance_timeout is greater than the fence timeout the tolerance_timeout will be reduced to the fence timeout. The provided number must be positive or -1 in case of an infinite tolerance_timeout. If not set, or null, tolerance_timeout will default to 0.",
             "example": 5000
           },
           "exit_delay": {
@@ -3647,7 +2670,7 @@
           },
           "provider_id": {
             "type": "string",
-            "description": "The id of the Location Provider which triggered this event. Note: provider_id must be null in case the event was triggered by a Trackable.",
+            "description": "The id of the Location Provider which triggered this event.",
             "example": "60BB1866-2DC0-4A5B-9C9D-114583BD66B3"
           },
           "trackable_id": {
@@ -3848,6 +2871,10 @@
             "example": "2021-06-07T23:00:00.000Z",
             "description": "The grace until the hub will stop service in case the lease is not renewed."
           },
+          "signature": {
+            "type": "string",
+            "description": "A cryptographic signature used to verify the lease."
+          },
           "is_trial": {
             "type": "boolean",
             "description": "Whether the hub runs in trial mode and should end operation after trial_end_timestamp."
@@ -4043,15 +3070,6 @@
             "description": "The location provider's unique identifier, e.g. the mac address of a UWB location provider.",
             "example": "77:4f:34:69:27:40"
           },
-          "trackables": {
-            "description": "The ids of trackables the provider is assigned to.",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "example": "3EE36F6C-6974-4084-81D8-A876DFA27FA6",
-              "format": "uuid"
-            }
-          },
           "timestamp_generated": {
             "type": "string",
             "description": "The timestamp when the location was calculated. The timestamp MUST be an ISO 8601 timestamp using UTC timezone and it SHOULD have millisecond precision to allow for precise speed and course calculations.",
@@ -4081,7 +3099,7 @@
           },
           "floor": {
             "type": "number",
-            "description": "A logical and non-localized representation for a building floor. Floor 0 represents the floor designated as 'ground'. Negative numbers indicate floors below the ground floor and positive numbers indicate floors above the ground floor. When implemented, the floor value MUST match described logical numbering scheme, which can be different from any numbering used within a building. Values can be expressed as an integer value, or as a float as required for mezzanine floor levels. If no value for the floor level is provided, 0 MUST be assumed.",
+            "description": "A logical and non-localized representation for a building floor. Floor 0 represents the floor designated as 'ground'. Negative numbers indicate floors below the ground floor and positive numbers indicate floors above the ground floor. When implemented, the floor value MUST match described logical numbering scheme, which can be different from any numbering used within a building. Values can be expressed as an integer value, or as a float as required for mezzanine floor levels.",
             "example": 4
           },
           "true_heading": {
@@ -4129,8 +3147,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Must be a valid id for the specific location provider type (e.g. a MAC address of a UWB tag)",
-            "example": "ac:de:23:11:32:40"
+            "description": "Must be a valid id for the specific location provider type (e.g. a MAC address of a UWB tag). Wherever applicable, the format of a MAC address MUST be an upper case EUI-64 hex-string representation, built from unsigned values, including leading zeros, without byte delimiters. Ids which can not be mapped to EUI-64 MAY deviate from this format.",
+            "example": "AABBCCDDEEFF0022"
           },
           "type": {
             "type": "string",
@@ -4161,7 +3179,7 @@
           },
           "fence_timeout": {
             "type": "number",
-            "description": "The timeout in milliseconds after which a location should expire and trigger a fence exit event (if no more location updates are sent). Must be a positive number or -1 in case of an infinite timeout. If not set, or set to null, it will default to the trackable or fence timeout setting.",
+            "description": "The timeout in milliseconds after which a location should expire and trigger a fence exit event (if no more location updates are sent). If not set or null the timeout will default to infinite. The provided number must be positive.",
             "example": 5
           },
           "exit_tolerance": {
@@ -4170,11 +3188,11 @@
           },
           "tolerance_timeout": {
             "type": "number",
-            "description": "The timeout in milliseconds after which a collision outside of an obstacle but still within exit_tolerance distance should release from a collision or fence event. Must be a positive number or -1 in case of an infinite timeout. If not set, or set to null, it will default to the fence or trackable timeout setting."
+            "description": "The timeout in milliseconds after which a collision outside of an obstacle but still within exit_tolerance distance should release from a collision or fence event. If not set or null the timeout will default to infinite. The provided number must be positive."
           },
           "exit_delay": {
             "type": "number",
-            "description": "The delay in milliseconds in which an imminent exit event should wait for another location update. This is relevant for fast rate position updates with quick moving objects. For example, an RTLS provider may batch location updates into groups, resulting in distances being temporarily outdated and premature events between quickly moving objects. The provided number must be positive or -1 in case of an infinite exit_delay. If not set or null, exit_delay will default to 0.",
+            "description": "The delay in milliseconds in which an imminent exit event should wait for another location update. This is relevant for fast rate position updates with quick moving objects. For example, an RTLS provider may batch location updates into groups, resulting in distances being temporarily outdated and premature events between quickly moving objects. If not set or null, exit_delay will default to 0.",
             "example": 100
           },
           "properties": {
@@ -4358,7 +3376,7 @@
           "id": {
             "type": "string",
             "format": "uuid",
-            "description": "Must be a unique identifier (e.g. a UUID). When creating a trackable, a unique id will be generated if one is not provided.",
+            "description": "Must be a unique identifier (i.e. a UUID). When creating a trackable, a unique id will be generated if one is not provided.",
             "example": "F2A6FC5A-DDBD-4523-B06C-0FA675A3787C"
           },
           "type": {
@@ -4391,20 +3409,20 @@
           },
           "fence_timeout": {
             "type": "number",
-            "description": "The timeout in milliseconds after which a location should expire and trigger a fence exit event (if no more location updates are sent). Must be a positive number or -1 in case of an infinite timeout. If not set, or set to null, it will default to the fence timeout setting.",
+            "description": "The timeout in milliseconds after which a location should expire and trigger a fence exit event (if no more location updates are sent). Must be a positive number or -1 in case of an infinite timeout. If not set, or set to null, it will default to the fence setting.",
             "example": 5
           },
           "exit_tolerance": {
             "type": "number",
-            "description": "The minimum distance in meters for a trackable to release from an ongoing collision. For example, for a trackable that was previously colliding with another trackable by being inside a trackable's radius, the collision event will not be released from the collision until its distance to the trackable's geometry is at least the given exit_tolerance. Must be a positive number. If not set or null, exit_tolerance will default to 0."
+            "description": "The minimum distance in meters for a trackable to release from an ongoing collision. For example, for a trackable that was previously colliding with another trackable by being inside a trackable's radius, the collision event will not be released from the collision until its distance to the trackable's geometry is at least the given exit_tolerance. Must be a positive number. If not set, or set to null, it will default to the fence setting."
           },
           "tolerance_timeout": {
             "type": "number",
-            "description": "The timeout in milliseconds after which a collision outside of a trackable, but within exit_tolerance distance to another obstacle, should release from a collision. Must be a positive number or -1 in case of an infinite timeout. If not set, or set to null, it will default to the fence timeout setting."
+            "description": "The timeout in milliseconds after which a collision outside of a trackable, but within exit_tolerance distance to another obstacle, should release from a collision. Must be a positive number or -1 in case of an infinite timeout. If not set, or set to null, it will default to the fence setting."
           },
           "exit_delay": {
             "type": "number",
-            "description": "The delay in milliseconds in which an imminent exit event should wait for another location update. This is relevant for fast rate position updates with quick moving objects. For example, an RTLS provider may batch location updates into groups, resulting in distances being temporarily outdated and premature events between quickly moving objects. The provided number must be positive or -1 in case of an infinite exit_delay. If not set or null, exit_delay will default to 0.",
+            "description": "The delay in milliseconds in which an imminent exit event should wait for another location update. This is relevant for fast rate position updates with quick moving objects. For example, an RTLS provider may batch location updates into groups, resulting in distances being temporarily outdated and premature events between quickly moving objects. The provided number must be positive or -1 in case of an infinite exit_delay. If not set, or set to null, it will default to the fence setting.",
             "example": 100
           },
           "radius": {
@@ -4730,7 +3748,7 @@
           "id": {
             "type": "string",
             "format": "uuid",
-            "description": "A unique identifier for the zone (e.g. UUID)."
+            "description": "Must be a unique identifier (i.e. a UUID). When creating a zone, a unique id will be generated if it is not provided."
           },
           "foreign_id": {
             "type": "string",
@@ -4824,12 +3842,8 @@
           },
           "floor": {
             "type": "number",
-            "description": "The canonical representation of the floor level, where floor 0 is the ground floor. If no floor is set or floor is null, the fence is applied to all floor levels.",
+            "description": "The canonical representation of the floor level, where floor 0 is the ground floor. If no floor is set or floor is null, 0 is used.",
             "example": 4
-          },
-          "need_transformation": {
-            "type": "boolean",
-            "description": "Whether the positions provided by the zone need transformation from local coordinates into real world coordinates. Coordinates MUST be in WGS84 projection if no transformation is to be applied."
           },
           "name": {
             "type": "string",
@@ -4849,27 +3863,365 @@
           "properties": {
             "type": "object",
             "description": "Any additional application or vendor specific properties. An application implementing this  object is not required to interpret any of the custom properties, but it MUST preserve the properties if set."
+          },
+          "wgs84_height": {
+            "type": "number",
+            "description": "The reference height of the zone in WGS84 coordinates."
+          },
+          "sqm": {
+            "type": "number",
+            "description": "An optional property only added in the consumption context. It gives an estimate of the projected size of the zone in square meters. If the zone geometry cannot be interpreted as a valid polygon, the area of its convex hull is given. In this case the value is negative, to indicate the use of the convex hull."
           }
         }
       }
     },
-    "securitySchemes": {
-      "lm_auth": {
-        "type": "oauth2",
-        "flows": {
-          "implicit": {
-            "authorizationUrl": "http://lm.omlox.org/oauth/dialog",
-            "scopes": {
-              "write:locations": "modify locations in your account",
-              "read:locations": "read your locations"
+    "responses": {
+      "IdArray": {
+        "description": "An array of all ids.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
             }
           }
         }
       },
-      "api_key": {
-        "type": "apiKey",
-        "name": "api_key",
-        "in": "header"
+      "BadRequestErrors": {
+        "description": "Request could not be processed. The http code matches the given error code. Check error message for details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "Bad_Request": {
+                "$ref": "#/components/examples/Bad_Request"
+              },
+              "License_Invalid": {
+                "$ref": "#/components/examples/License_Invalid"
+              },
+              "Not_Authenticated": {
+                "$ref": "#/components/examples/Not_Authenticated"
+              },
+              "Permission": {
+                "$ref": "#/components/examples/Permission"
+              }
+            }
+          }
+        }
+      },
+      "BadRequestForLicenseErrors": {
+        "description": "Request could not be processed. The http code matches the given error code. Check error message for details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "Bad_Request": {
+                "$ref": "#/components/examples/Bad_Request"
+              },
+              "Not_Authenticated": {
+                "$ref": "#/components/examples/Not_Authenticated"
+              },
+              "Permission": {
+                "$ref": "#/components/examples/Permission"
+              }
+            }
+          }
+        }
+      },
+      "BadRequestNotFoundErrors": {
+        "description": "Request could not be processed. The http code matches the given error code. Check error message for details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "Bad_Request": {
+                "$ref": "#/components/examples/Bad_Request"
+              },
+              "Not_Found": {
+                "$ref": "#/components/examples/Not_Found"
+              },
+              "License_Invalid": {
+                "$ref": "#/components/examples/License_Invalid"
+              },
+              "Not_Authenticated": {
+                "$ref": "#/components/examples/Not_Authenticated"
+              },
+              "Permission": {
+                "$ref": "#/components/examples/Permission"
+              }
+            }
+          }
+        }
+      },
+      "AuthErrors": {
+        "description": "Request could not be processed. The http code matches the given error code. Check error message for details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "License_Invalid": {
+                "$ref": "#/components/examples/License_Invalid"
+              },
+              "Not_Authenticated": {
+                "$ref": "#/components/examples/Not_Authenticated"
+              },
+              "Permission": {
+                "$ref": "#/components/examples/Permission"
+              }
+            }
+          }
+        }
+      },
+      "NotFoundErrors": {
+        "description": "Request could not be processed. The http code matches the given error code. Check error message for details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "Not_Found": {
+                "$ref": "#/components/examples/Not_Found"
+              },
+              "License_Invalid": {
+                "$ref": "#/components/examples/License_Invalid"
+              },
+              "Not_Authenticated": {
+                "$ref": "#/components/examples/Not_Authenticated"
+              },
+              "Permission": {
+                "$ref": "#/components/examples/Permission"
+              }
+            }
+          }
+        }
+      },
+      "LicenseErrors": {
+        "description": "Request could not be processed. The http code matches the given error code. Check error message for details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "License_Expired": {
+                "$ref": "#/components/examples/License_Expired"
+              },
+              "License_Is_Invalid": {
+                "$ref": "#/components/examples/License_Is_Invalid"
+              },
+              "License_Not_Started": {
+                "$ref": "#/components/examples/License_Not_Started"
+              },
+              "Not_Authenticated": {
+                "$ref": "#/components/examples/Not_Authenticated"
+              },
+              "Permission": {
+                "$ref": "#/components/examples/Permission"
+              }
+            }
+          }
+        }
+      },
+      "AllErrors": {
+        "description": "Request could not be processed. The http code matches the given error code. Check error message for details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "Bad_Request": {
+                "$ref": "#/components/examples/Bad_Request"
+              },
+              "Not_Found": {
+                "$ref": "#/components/examples/Not_Found"
+              },
+              "License_Expired": {
+                "$ref": "#/components/examples/License_Expired"
+              },
+              "License_Invalid": {
+                "$ref": "#/components/examples/License_Invalid"
+              },
+              "License_Is_Invalid": {
+                "$ref": "#/components/examples/License_Is_Invalid"
+              },
+              "License_Not_Started": {
+                "$ref": "#/components/examples/License_Not_Started"
+              },
+              "Not_Authenticated": {
+                "$ref": "#/components/examples/Not_Authenticated"
+              },
+              "Permission": {
+                "$ref": "#/components/examples/Permission"
+              }
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "Bad_Request": {
+        "value": {
+          "type": "com.flowcate.http.bad_request",
+          "code": 400,
+          "message": "Request could not be processed. The http code matches the given error code. Check error message for details."
+        }
+      },
+      "License_Expired": {
+        "value": {
+          "type": "com.flowcate.license.expired",
+          "code": 400,
+          "message": "The trial period has expired."
+        }
+      },
+      "License_Invalid": {
+        "value": {
+          "type": "com.flowcate.license.invalid",
+          "code": 401,
+          "message": "The request was rejected because the license is not valid."
+        }
+      },
+      "License_Is_Invalid": {
+        "value": {
+          "type": "com.flowcate.license.invalid",
+          "code": 400,
+          "message": "Could not contact license server."
+        }
+      },
+      "License_Not_Started": {
+        "value": {
+          "type": "com.flowcate.license.not_started",
+          "code": 404,
+          "message": "The trial was not started yet. Call /v2/license/starttrial to activate the trial license."
+        }
+      },
+      "Not_Authenticated": {
+        "value": {
+          "type": "com.flowcate.auth.authenticated",
+          "code": 401,
+          "message": "The request was rejected because no valid authentication was provided."
+        }
+      },
+      "Permission": {
+        "value": {
+          "type": "com.flowcate.auth.permission",
+          "code": 403,
+          "message": "The request was rejected because the operation is not permitted for the user."
+        }
+      },
+      "Not_Found": {
+        "value": {
+          "type": "com.flowcate.http.not_found",
+          "code": 404,
+          "message": "The specified resource was not found."
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "OpenID generated JWT bearer token.",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "crs": {
+        "in": "query",
+        "name": "crs",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Project according to the specified coordinate reference system identifier.",
+        "example": "EPSG:4326"
+      },
+      "foreign_id": {
+        "in": "query",
+        "name": "foreign_id",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Find a zone by its foreign_id."
+      },
+      "geojson": {
+        "in": "query",
+        "name": "geojson",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Return the object as a GeoJSON object."
+      },
+      "spatial_query": {
+        "in": "query",
+        "name": "spatial_query",
+        "schema": {
+          "type": "boolean"
+        },
+        "description": "If true, the query will be performed based strictly on spatial information, i.e. the last reported location. Otherwise, the query will take into account timeouts."
+      },
+      "zone_id": {
+        "in": "query",
+        "name": "zone_id",
+        "schema": {
+          "type": "string"
+        },
+        "description": "The zone id to be used to project coordinates.",
+        "example": "ECADD57B-7E4A-4636-B105-6B1C11BB75BF"
+      },
+      "path_zone_id": {
+        "name": "zone_id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "path_trackable_id": {
+        "name": "trackable_id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "path_provider_id": {
+        "name": "provider_id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "path_fence_id": {
+        "name": "fence_id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
       }
     }
   }
