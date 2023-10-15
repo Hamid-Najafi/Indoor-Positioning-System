@@ -2,6 +2,7 @@ Indoor Positioning System
 =======
 
 Firmware, electrical CAD, and documentation for IPS.
+Highly under development... (any contribution will be appreciated)
 
 License
 -------

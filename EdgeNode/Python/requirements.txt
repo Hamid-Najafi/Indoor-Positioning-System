@@ -1,0 +1,11 @@
+###### Requirements without Version Specifiers ######
+ujson
+requests
+paho-mqtt
+numpy
+
+###### Requirements with Version Specifiers ######
+# ujson == 0.6.1      # Version Matching. Must be version 0.6.1
+# ujson >= 4.1.1      # Minimum version 4.1.1
+# ujson != 3.5        # Version Exclusion. Anything except version 3.5
+# ujson ~= 1.1        # Compatible release. Same as >= 1.1, == 1.*

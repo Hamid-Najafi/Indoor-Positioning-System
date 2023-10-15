@@ -1,0 +1,5 @@
+    Collect IMU Data: Obtain acceleration data from the IMU. IMUs typically provide acceleration in three dimensions (x, y, and z).
+
+    Integrate Acceleration to Velocity: Integrate the acceleration data over time to calculate velocity. This involves summing up the acceleration at each time step and integrating it with respect to time.
+
+    Integrate Velocity to Displacement: Integrate the velocity data over time to calculate displacement (distance traveled). This involves summing up the velocity at each time step and integrating it with respect to time.
