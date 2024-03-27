@@ -146,11 +146,11 @@ def uwb_range_offset(uwb_range):
 
 
 client = mqtt.Client()
-mqtt_broker = "raspberrypi.local"
+mqtt_broker = "emqx.c1tech.group"
 mqtt_topic_uwb = "uwbtag/CB:50:24:0A:C4:80:CB:50"
 mqtt_topic_imu = "imutag/CB:50:24:0A:C4:80:CB:50"
-mqtt_username = "emqx"
-mqtt_password = "brokerpw1"
+mqtt_username = "user1"
+mqtt_password = "user1"
 mqtt_port = 1883
 
 

@@ -50,41 +50,46 @@ su c1tech
 # Python
 # --- IF NEEDED (pre-installed) ---
 sudo apt update
-sudo apt install python3.9 python3-pip
+sudo apt install python3.10 python3-pip
 python -m pip install -U pip testresources setuptools
 python -m pip install --upgrade pip
 # ============================== 
 # NodeJS
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-source ~/.bashrc
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+
 nvm install --lts
 # ============================== 
 # Clone Repos
-git clone https://github.com/flowcate/deephub-basic-setup
-git clone https://github.com/flowcate/deephub-examples
+git clone https://github.com/flowcate/deephub-basic-setup.git
+git clone https://github.com/flowcate/deephub-examples.git
 # ============================== 
 # Setup Environments
-cd ~/deephub-basic-setup
-docker-compose pull
+cd /home/c1tech/flowcate/deephub-basic-setup
+docker compose pull
 
-cd ~/deephub-examples/deephub-influxdb-grafana
-docker-compose pull
+cd /home/c1tech/flowcate/deephub-examples/deephub-influxdb-grafana
+docker compose pull
 
-cd ~/deephub-examples/deephub-rest-api-basics
+cd /home/c1tech/flowcate/deephub-examples/deephub-rest-api-basics
 pip install ujson requests
 
-cd ~/deephub-examples/deephub-to-mqtt-gateway
-docker-compose pull
+cd /home/c1tech/flowcate/deephub-examples/deephub-to-mqtt-gateway
+docker compose pull
 npm i
 
-cd ~/deephub-examples/deephub-warehouse-use-case
+cd /home/c1tech/flowcate/deephub-examples/deephub-warehouse-use-case
 npm i
 # ============================== 
 # Start DeepHub
 # ============================== 
-cd ~/deephub-basic-setup
+cd /home/c1tech/flowcate/deephub-basic-setup
 # Tested on Version 2.3.2
-docker-compose up -d 
+docker compose up -d 
+# DeepHub® instance address ("Admin UI"): http://localhost:8081 or http://localhost:8081/deephub-admin-ui/ 
+# DeepHub® instance address ("Kiosk UI"): http://localhost:8081/deephub-kiosk-ui/
 # ============================== 
 # Start EdgeMaster
 # ============================== 
