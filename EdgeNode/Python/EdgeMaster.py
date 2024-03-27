@@ -1,5 +1,7 @@
 # pip install -r requirements.txt
-
+# CLEAR SYSTEM PROXY
+# Set Deephub Server IP (url)
+# python  .\EdgeMaster.py
 import time
 from datetime import datetime
 import turtle
@@ -266,15 +268,15 @@ def send_location_updates(provider_id: str, provider_type: str, file: str, rever
             location.position = dh.Point(coordinates=coordinates)
             rest.put(url + '/providers/locations', location.to_json_list())
             time.sleep(0.05)
+            
+            
 #
 # Initialize all the example entities in the DeepHub.
 #
-
-
 def setup():
     global trackable_url
 
-    # Check whether the office's entities exist already.
+    # # Check whether the office's entities exist already.    
     if len(rest.get(url + '/zones' + '?foreign_id=' + zone_foreign_id).json()) > 0:
         print('Found offie zone. Continue.')
         trackable_id_pallet = rest.get(url + '/trackables').json()[0]
@@ -422,8 +424,8 @@ def main():
 
     is_healthy()
     print('Setting up the workspace.')
-    # setup()
-    # setupAnchors()
+    setup()
+    setupAnchors()
     print('DeepHub Setup Done.')
 
     while True:

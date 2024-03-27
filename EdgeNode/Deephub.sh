@@ -83,8 +83,22 @@ npm i
 # Start DeepHub
 # ============================== 
 cd ~/deephub-basic-setup
+# Tested on Version 2.3.2
 docker-compose up -d 
-
+# ============================== 
+# Start EdgeMaster
+# ============================== 
+# Start emqx
+cd ~/deephub-examples/deephub-to-mqtt-gateway
+docker compose up -d
+# open EdgeMaster file location
+pip install -r requirements.txt
+# CLEAR SYSTEM PROXY
+python  .\EdgeMaster.py
+# PowerOn Anchor
+# PowerOn Tag
+# Tag -> Distance From Anchor -> Send over WiFi -> using Mqtt -> EdgeMaster get from MQTT -> update Deephub 
+# Tag -> Gyro -> Send over WiFi -> using Mqtt -> EdgeMaster get from MQTT -> update Deephub 
 # ============================== 
 # Start Examples
 # ============================== 
@@ -119,6 +133,7 @@ npm run start
 npm run stop
 curl -X DELETE localhost:8081/deephub/v1/trackables
 # ============================== 
+# FireFox ONLY! - no proxy
 http://raspberrypi.local:8081/
 http://raspberrypi.local:8081/deephub/version
 # ============================== 
