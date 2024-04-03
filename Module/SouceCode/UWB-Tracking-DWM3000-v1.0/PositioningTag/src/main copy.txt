@@ -1,0 +1,680 @@
+// https://stackoverflow.com/questions/75540512/cannot-ping-esp32-mdns-webserver-by-hostname
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <TaskScheduler.h>
+#include <PubSubClient.h>
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <DW1000.h>
+#include <DW1000Device.h>
+#include <DW1000Ranging.h>
+#include "link.h"
+
+#define SERIAL_DEBUG
+// TFT-SX7789 Connection Pins
+#define TFT_CS 27
+#define TFT_RST 25
+#define TFT_DC 26
+#define TFT_MOSI 13 // Data out
+#define TFT_SCLK 14 // Clock out
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+
+// UWB-DWM1000 Connection Pins
+#define UWB_RST 17 // Reset pin
+#define UWB_IRQ 32 // IRQ pin
+#define UWB_SS 33  // SPI Select pin
+
+#define SPI_SCK 18
+#define SPI_MISO 19
+#define SPI_MOSI 23
+
+struct MyLink *uwb_data;
+int index_num = 0;
+long runtime = 0;
+String all_json = "";
+char TAG_Addr[24];
+String TAG_Address_Str;
+
+// WiFi
+WiFiClient wifiClient;
+const String hostname = "UWB-Anchor";
+const char *ssid = "ILMA 903";
+const char *password = "Officepass.24";
+bool wifiConnection;
+
+// MQTT Broker
+PubSubClient pubSubClient(wifiClient);
+const char *mqtt_broker = "raspberrypi.local";
+const char *mqtt_username = "emqx";
+const char *mqtt_password = "brokerpw1";
+const int mqtt_port = 1883;
+const char *mqtt_topicMPU_R = "mputag/";
+char mqtt_topicMPU[32];
+const char *mqtt_topicUWB_R = "uwbtag/";
+char mqtt_topicUWB[32];
+
+hw_timer_t *My_timer = NULL;
+bool onUDPTimer = false;
+int dot = 10;
+
+// MPU-6050
+Adafruit_MPU6050 mpu;
+
+void tftInit();
+void logoshow(void);
+void displayshow();
+void display_uwb(struct MyLink *p);
+
+void uwbInit();
+void newRange();
+void newDevice(DW1000Device *device);
+void inactiveDevice(DW1000Device *device);
+
+void wifiInit();
+void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
+
+void mqttConnectionInit();
+void mqttCallback(char *mqtt_topicUWB_R, byte *payload, unsigned int length);
+
+void udpConnectionInit();
+void mqttPacketHandler(String &msg_json, char *Topic);
+
+void mpuInit();
+void mpudisplay(sensors_event_t *a, sensors_event_t *g);
+void tempdisplay(sensors_event_t *t);
+
+// Callback methods prototypes
+void mpuTaskCallback();
+void uwbTaskCallback();
+
+void taskSchedulerInit();
+
+// Tasks
+Task mpuTask(1000, TASK_FOREVER, &mpuTaskCallback);
+Task uwbTask(500, TASK_FOREVER, &uwbTaskCallback);
+Scheduler runner;
+float xa;
+float ya;
+float za;
+float xg;
+float yg;
+float zg;
+float lastt;
+
+void make_mpu_json(sensors_event_t *a, sensors_event_t *g,
+                   sensors_event_t *t, String *s)
+{
+
+  *s = "{\"MPUEvent\":{";
+  char mpu_json[128];
+  sprintf(mpu_json, "{\"Accel\": {\"X\":%.2f,\"Y\":%.2f,\"Z\":%.2f},\"Gyro\":{\"X\":%.2f,\"Y\": %.2f,\"Z\":%.2f},\"Temp\":%.2f}",
+          a->acceleration.x, a->acceleration.y, a->acceleration.z, g->gyro.x, g->gyro.y, g->gyro.z, t->temperature);
+  *s += mpu_json;
+  *s += "}";
+}
+
+void mpudisplay(sensors_event_t *a, sensors_event_t *g)
+{
+  tft.setTextColor(ST77XX_BLACK);
+  tft.setCursor(120, 170);
+  tft.print(xa);
+  tft.setCursor(25, 190);
+  tft.print(ya);
+  tft.setCursor(120, 190);
+  tft.print(za);
+  tft.setCursor(120, 210);
+  tft.print(xg);
+  tft.setCursor(25, 230);
+  tft.print(yg);
+  tft.setCursor(120, 230);
+  tft.println(zg);
+
+  tft.setTextColor(ST77XX_CYAN);
+  tft.setCursor(120, 170);
+  tft.print(a->acceleration.x);
+  tft.setCursor(25, 190);
+  tft.print(a->acceleration.y);
+  tft.setCursor(120, 190);
+  tft.print(a->acceleration.z);
+  tft.setCursor(120, 210);
+
+  tft.print(g->gyro.x);
+  tft.setCursor(25, 230);
+  tft.print(g->gyro.y);
+  tft.setCursor(120, 230);
+  tft.println(g->gyro.z);
+
+  xa = a->acceleration.x;
+  ya = a->acceleration.y;
+  za = a->acceleration.z;
+  xg = g->gyro.x;
+  yg = g->gyro.y;
+  zg = g->gyro.z;
+}
+void tempdisplay(sensors_event_t *t)
+{
+  tft.setTextColor(ST77XX_BLACK);
+  tft.setCursor(110, 250);
+  tft.print(lastt);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setCursor(110, 250);
+  tft.print(t->temperature);
+  lastt = t->temperature;
+}
+String mpu_json;
+Adafruit_Sensor *mpu_temp;
+
+void mpuTaskCallback()
+{
+  if (mpu.getMotionInterruptStatus())
+  {
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    make_mpu_json(&a, &g, &temp, &mpu_json);
+
+#ifdef SERIAL_DEBUG
+    Serial.println(mpu_json);
+#endif
+    mqttPacketHandler(mpu_json, mqtt_topicMPU);
+    mpudisplay(&a, &g);
+  }
+  sensors_event_t temp;
+  mpu_temp->getEvent(&temp);
+  tempdisplay(&temp);
+}
+
+void uwbTaskCallback()
+{
+  display_uwb(uwb_data);
+  make_link_json(uwb_data, &all_json);
+  mqttPacketHandler(all_json, mqtt_topicUWB);
+#ifdef SERIAL_DEBUG
+  Serial.println(all_json);
+#endif
+}
+
+void mqttConnectionCheck()
+{
+  if (!pubSubClient.connected())
+  {
+#ifdef SERIAL_DEBUG
+    Serial.print("The client \"");
+    Serial.print(TAG_Address_Str);
+    Serial.println("\" connects to the public MQTT broker");
+#endif
+    if (pubSubClient.connect(TAG_Addr, mqtt_username, mqtt_password))
+    {
+#ifdef SERIAL_DEBUG
+      Serial.println("MQTT Broker Connected");
+#endif
+      tft.setTextColor(ST77XX_BLACK);
+      tft.setCursor(0, 70);
+      tft.println("MQTT: Disonnected");
+      tft.setTextColor(ST77XX_RED);
+      tft.setCursor(0, 70);
+      tft.print("MQTT: Connected");
+      // tft.print("MQTT: ");
+      // tft.print(mqtt_broker);
+    }
+    else
+    {
+      tft.setTextColor(ST77XX_BLACK);
+      tft.setCursor(0, 70);
+      tft.println("MQTT: Connected");
+      tft.setTextColor(ST77XX_RED);
+      tft.setCursor(0, 70);
+      tft.println("MQTT: Disonnected");
+#ifdef SERIAL_DEBUG
+      Serial.println("Server Connection Error");
+      Serial.print("MQTT failed with state ");
+      Serial.println(pubSubClient.state());
+#endif
+    }
+  }
+}
+
+void setup()
+{
+#ifdef SERIAL_DEBUG
+  Serial.begin(115200);
+  Serial.println("Initializing Device...");
+#endif
+
+  // TFT ST7789 Init
+  tftInit();
+
+  // UWB init
+  uwbInit();
+
+  // WiFi init
+  wifiInit();
+
+
+  // LoGo Show
+  logoshow();
+
+  // MQTT Connection Init
+  mqttConnectionInit();
+  mqttConnectionCheck();
+
+  // MPU init
+  mpuInit();
+
+  // Task Scheduler Init
+  taskSchedulerInit();
+
+  displayshow();
+#ifdef SERIAL_DEBUG
+  Serial.println("Initializing End");
+#endif
+}
+
+void taskSchedulerInit()
+{
+#ifdef SERIAL_DEBUG
+  Serial.println("Task Scheduler Init");
+#endif
+  runner.init();
+  runner.addTask(mpuTask);
+  runner.addTask(uwbTask);
+  // mpuTask.enable();
+  uwbTask.enable();
+#ifdef SERIAL_DEBUG
+  Serial.println("Task Scheduler Done");
+#endif
+}
+void loop()
+{
+  runner.execute();
+  DW1000Ranging.loop();
+  // if (wifiConnection)
+  // {
+  //   delay(1000);
+  //   mqttConnectionCheck();
+  //   wifiConnection = false;
+  // }
+}
+
+// Display function
+
+void tftInit()
+{
+#ifdef SERIAL_DEBUG
+  Serial.println("TFT ST7789 Init");
+#endif
+  tft.init(240, 280);
+  tft.setTextWrap(false);
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextSize(2);
+#ifdef SERIAL_DEBUG
+  Serial.println("TFT ST7789 Done");
+
+#endif
+}
+
+void logoshow(void)
+{
+#ifdef SERIAL_DEBUG
+  Serial.println("Watermark & Info Start");
+#endif
+  tft.setTextColor(ST77XX_BLUE);
+  tft.setCursor(70, 10);
+  tft.println("C1 Tech");
+  tft.setCursor(70, 30);
+  tft.println("UWB Tag");
+
+  tft.setCursor(0, 50);
+  tft.setTextColor(ST77XX_CYAN);
+  tft.println("SSID:");
+  tft.println(ssid);
+  tft.println("Hostname:");
+  tft.println(hostname);
+  tft.println("MQTT:");
+  tft.println(mqtt_broker);
+
+  tft.println();
+  tft.setTextColor(ST77XX_ORANGE);
+  tft.println("Mode:");
+  tft.println("Short Data");
+  tft.println("Range - Accuracy");
+  tft.println();
+
+  tft.setTextColor(ST77XX_YELLOW);
+  tft.println("Tag Address:");
+  tft.setTextSize(1);
+  tft.println();
+  tft.println(TAG_Addr);
+  tft.setTextSize(2);
+
+  delay(2000);
+  tft.fillRect(0, 50, 250, 230, ST77XX_BLACK);
+
+#ifdef SERIAL_DEBUG
+  Serial.println("Watermark & Info Done");
+#endif
+}
+
+void displayshow()
+{
+  tft.setTextColor(ST77XX_ORANGE);
+  tft.setCursor(0, 90);
+  tft.print("Distanse(m):");
+  tft.setCursor(0, 130);
+  tft.print("Signal(dBm):");
+
+  tft.setTextColor(ST77XX_CYAN);
+  tft.setCursor(0, 170);
+  tft.print("Accel");
+  tft.print("   ");
+  tft.print("X:");
+  tft.setCursor(0, 190);
+  tft.print("Y:");
+  tft.setCursor(95, 190);
+  tft.print("Z:");
+
+  tft.setCursor(0, 210);
+  tft.print("Gyro");
+  tft.print("    ");
+  tft.print("X:");
+  tft.setCursor(0, 230);
+  tft.print("Y:");
+  tft.setCursor(95, 230);
+  tft.print("Z:");
+
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setCursor(45, 250);
+  tft.print("Temp: ");
+  tft.setCursor(165, 250);
+  tft.print(" C");
+}
+bool noAncher;
+float range2072;
+float dbm2072;
+float range4C3D;
+float dbm4C3D;
+
+void display_uwb(struct MyLink *p)
+{
+  struct MyLink *temp = p;
+  char c[30];
+  if (temp->next == NULL)
+  {
+    tft.setTextColor(ST77XX_BLACK);
+    tft.setCursor(0, 110);
+    sprintf(c, "%.1f", range2072);
+    tft.print(c);
+    tft.setCursor(0, 150);
+    sprintf(c, "%.2f", dbm2072);
+    tft.println(c);
+    tft.setCursor(120, 110);
+    sprintf(c, "%.1f", range4C3D);
+    tft.print(c);
+    tft.setCursor(120, 150);
+    sprintf(c, "%.2f", dbm4C3D);
+    tft.println(c);
+
+    tft.setTextColor(ST77XX_RED);
+    tft.setCursor(0, 110);
+    tft.println("No Anchor");
+    noAncher = true;
+    return;
+  }
+
+  while (temp->next != NULL)
+  {
+    tft.setTextColor(ST77XX_BLACK);
+    temp = temp->next;
+    char c[30];
+    if (noAncher)
+    {
+      tft.setCursor(0, 110);
+      tft.println("No Anchor");
+      noAncher = false;
+    }
+
+    if (temp->anchor_addr == 0x2072)
+    {
+      tft.setCursor(0, 110);
+      sprintf(c, "%.1f", range2072);
+      tft.print(c);
+      tft.setCursor(0, 150);
+      sprintf(c, "%.2f", dbm2072);
+      tft.println(c);
+
+      range2072 = temp->range[0];
+      dbm2072 = temp->dbm;
+
+      tft.setCursor(0, 110);
+      tft.setTextColor(ST77XX_ORANGE);
+      sprintf(c, "%.1f", temp->range[0]);
+      tft.print(c);
+      tft.setCursor(0, 150);
+      sprintf(c, "%.2f", temp->dbm);
+      tft.println(c);
+    }
+    else if (temp->anchor_addr == 0x4C3D)
+    {
+      tft.setCursor(120, 110);
+      sprintf(c, "%.1f", range4C3D);
+      tft.print(c);
+      tft.setCursor(120, 150);
+      sprintf(c, "%.2f", dbm4C3D);
+      tft.println(c);
+
+      range4C3D = temp->range[0];
+      dbm4C3D = temp->dbm;
+      tft.setCursor(120, 110);
+      tft.setTextColor(ST77XX_ORANGE);
+      sprintf(c, "%.1f", temp->range[0]);
+      tft.print(c);
+      tft.setCursor(120, 150);
+      sprintf(c, "%.2f", temp->dbm);
+      tft.println(c);
+    }
+  }
+  return;
+}
+
+// UWB function
+
+void uwbInit()
+{
+#ifdef SERIAL_DEBUG
+  Serial.println("UWB Init");
+#endif
+  // Generate UWB EUI Addres
+  TAG_Address_Str = WiFi.macAddress().substring(12, 17) + ":" + WiFi.macAddress();
+  TAG_Address_Str.toCharArray(TAG_Addr, TAG_Address_Str.length() + 1);
+  DW1000Ranging.initCommunication(UWB_RST, UWB_SS, UWB_IRQ); // Reset, CS, IRQ pin
+  DW1000Ranging.attachNewRange(newRange);
+  DW1000Ranging.attachNewDevice(newDevice);
+  DW1000Ranging.attachInactiveDevice(inactiveDevice);
+  DW1000Ranging.startAsTag(TAG_Addr, DW1000.MODE_LONGDATA_RANGE_LOWPOWER, true);
+  uwb_data = init_link();
+#ifdef SERIAL_DEBUG
+  Serial.println("UWB Init Done");
+#endif
+}
+
+void newRange()
+{
+  char c[30];
+
+#ifdef SERIAL_DEBUG
+  Serial.print("from: ");
+  Serial.print(DW1000Ranging.getDistantDevice()->getShortAddress(), HEX);
+  Serial.print("\t Range: ");
+  Serial.print(DW1000Ranging.getDistantDevice()->getRange());
+  Serial.print(" m");
+  Serial.print("\t RX power: ");
+  Serial.print(DW1000Ranging.getDistantDevice()->getRXPower());
+  Serial.println(" dBm");
+#endif
+
+  fresh_link(uwb_data, DW1000Ranging.getDistantDevice()->getShortAddress(), DW1000Ranging.getDistantDevice()->getRange(), DW1000Ranging.getDistantDevice()->getRXPower());
+}
+
+void newDevice(DW1000Device *device)
+{
+  add_link(uwb_data, device->getShortAddress());
+
+#ifdef SERIAL_DEBUG
+  Serial.print("ranging init; 1 device added ! -> ");
+  Serial.print(" short:");
+  Serial.println(device->getShortAddress(), HEX);
+#endif
+}
+
+void inactiveDevice(DW1000Device *device)
+{
+#ifdef SERIAL_DEBUG
+  Serial.print("delete inactive device: ");
+  Serial.println(device->getShortAddress(), HEX);
+#endif
+
+  delete_link(uwb_data, device->getShortAddress());
+}
+
+// WiFi function
+
+void wifiInit()
+{
+#ifdef SERIAL_DEBUG
+  Serial.println("WiFi Init");
+#endif
+
+  WiFi.mode(WIFI_STA);
+  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
+  WiFi.setHostname(hostname.c_str());
+  WiFi.setSleep(false);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  // WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
+  // WiFi.onEvent(WiFiStationDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+#ifdef SERIAL_DEBUG
+  Serial.println("WiFi Init Done");
+#endif
+}
+void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+#ifdef SERIAL_DEBUG
+  Serial.println("WiFi Connected");
+  Serial.println(WiFi.localIP());
+#endif
+  wifiConnection = true;
+  tft.setTextColor(ST77XX_BLACK);
+  tft.setCursor(0, 50);
+  tft.print("WiFi: Disconnected");
+
+  tft.setTextColor(ST77XX_RED);
+  tft.setCursor(0, 50);
+  tft.print("WiFi: Connected");
+
+  // tft.print("WiFi: ");
+  // tft.println(WiFi.localIP());
+}
+
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+  wifiConnection = false;
+
+  tft.setTextColor(ST77XX_BLACK);
+  tft.setCursor(0, 50);
+  tft.print("WiFi: Connected");
+
+  tft.setTextColor(ST77XX_RED);
+  tft.setCursor(0, 50);
+  tft.print("WiFi: Disconnected");
+
+#ifdef SERIAL_DEBUG
+  Serial.println("Disconnected from WiFi access point");
+  Serial.println("Trying to Reconnect");
+#endif
+
+  WiFi.begin(ssid, password);
+}
+
+// MQTT Connection
+void mqttConnectionInit()
+{
+  strcpy(mqtt_topicUWB, mqtt_topicUWB_R); /* copy name into the new var */
+  strcat(mqtt_topicUWB, TAG_Addr);        /* add the extension */
+#ifdef SERIAL_DEBUG
+  Serial.print("MQTT UWB Topic: ");
+  Serial.println(mqtt_topicUWB);
+#endif
+
+  strcpy(mqtt_topicMPU, mqtt_topicMPU_R); /* copy name into the new var */
+  strcat(mqtt_topicMPU, TAG_Addr);        /* add the extension */
+#ifdef SERIAL_DEBUG
+  Serial.print("MQTT MPU Topic: ");
+  Serial.println(mqtt_topicMPU);
+#endif
+
+  pubSubClient.setServer(mqtt_broker, mqtt_port);
+  // pubSubClient.setCallback(mqttCallback);
+}
+void mqttCallback(char *mqtt_topicUWB_R, byte *payload, unsigned int length)
+{
+  Serial.print("Message arrived in mqtt_topicUWB_R: ");
+  Serial.println(mqtt_topicUWB_R);
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++)
+  {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+  Serial.println("-----------------------");
+}
+
+void mqttPacketHandler(String &msg_json, char *Topic)
+{
+  char charArray[msg_json.length() + 1]; // +1 for the null terminator
+  msg_json.toCharArray(charArray, msg_json.length() + 1);
+  pubSubClient.publish(&*Topic, charArray);
+
+  // if (pubSubClient.publish(&*Topic, charArray))
+  // {
+  //   Serial.println("MQTT Packet Sent");
+  // }
+  // else
+  // {
+  //   Serial.println("MQTT Packet Not Sent");
+  // }
+}
+
+// MPU function
+void mpuInit()
+{
+#ifdef SERIAL_DEBUG
+  Serial.println("MPU Init");
+#endif
+
+  mpu.begin();
+  mpu_temp = mpu.getTemperatureSensor();
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  // setupt motion detection
+  mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
+  mpu.setMotionDetectionThreshold(1);
+  mpu.setMotionDetectionDuration(20);
+  mpu.setInterruptPinLatch(true); // Keep it latched.  Will turn off when reinitialized.
+  mpu.setInterruptPinPolarity(true);
+  mpu.setMotionInterrupt(true);
+
+#ifdef SERIAL_DEBUG
+  Serial.println("MPU Init Done");
+#endif
+}
